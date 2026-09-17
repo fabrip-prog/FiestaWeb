@@ -6,14 +6,26 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 font-sans text-gray-800">
-  <div class="max-w-5xl mx-auto py-10 px-6">
+  <!-- Login Screen -->
+  <div id="login-screen" class="min-h-screen flex items-center justify-center bg-gray-900 absolute inset-0 z-50">
+    <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full">
+      <h2 class="text-2xl font-black mb-6 text-center uppercase">Ingreso Admin</h2>
+      <input type="text" id="username" placeholder="Usuario" class="w-full mb-4 p-3 border rounded bg-gray-50">
+      <input type="password" id="password" placeholder="Contraseña" class="w-full mb-6 p-3 border rounded bg-gray-50">
+      <button onclick="login()" class="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700 transition">ENTRAR</button>
+      <p id="login-error" class="text-red-500 text-sm font-bold mt-4 text-center hidden">Datos incorrectos</p>
+    </div>
+  </div>
+
+  <div id="main-content" class="max-w-5xl mx-auto py-10 px-6 hidden">
     
     <!-- Botón para volver al Index -->
-    <div class="mb-4">
+    <div class="mb-4 flex justify-between items-center">
       <a href="index.html" class="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-500 hover:text-gray-900 transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
         Volver al Sitio Web
       </a>
+      <button onclick="logout()" class="text-sm font-bold text-red-500 hover:text-red-700">Cerrar Sesión</button>
     </div>
 
     <div class="flex justify-between items-center mb-8">
@@ -30,10 +42,50 @@
   </div>
 
   <script>
+    const AUTH_URL = 'http://localhost:3001/api/login';
     const API_URL = 'http://localhost:3001/api/fiestas';
     const UPLOAD_URL = 'http://localhost:3001/api/upload';
     
     let eventsData = [];
+
+    function checkAuth() {
+      const token = localStorage.getItem('adminToken');
+      if (token) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-content').classList.remove('hidden');
+        loadData();
+      } else {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('main-content').classList.add('hidden');
+      }
+    }
+
+    async function login() {
+      const u = document.getElementById('username').value;
+      const p = document.getElementById('password').value;
+      try {
+        const res = await fetch(AUTH_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({username: u, password: p})
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('adminToken', data.token);
+          document.getElementById('login-error').classList.add('hidden');
+          checkAuth();
+        } else {
+          document.getElementById('login-error').classList.remove('hidden');
+        }
+      } catch(e) {
+        alert('Error conectando con el servidor.');
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('adminToken');
+      checkAuth();
+    }
 
     // Cargar datos al iniciar
     async function loadData() {
@@ -183,7 +235,11 @@
       const formData = new FormData();
       formData.append('file', file);
       try {
-        const response = await fetch(UPLOAD_URL, { method: 'POST', body: formData });
+        const response = await fetch(UPLOAD_URL, { 
+          method: 'POST', 
+          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') },
+          body: formData 
+        });
         const data = await response.json();
         if (data.url) {
           if (!eventsData[eIdx].gallery) eventsData[eIdx].gallery = [];
@@ -330,7 +386,11 @@
       const formData = new FormData();
       formData.append('file', file);
       try {
-        const response = await fetch(UPLOAD_URL, { method: 'POST', body: formData });
+        const response = await fetch(UPLOAD_URL, { 
+          method: 'POST', 
+          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') },
+          body: formData 
+        });
         const data = await response.json();
         if (data.url) {
           eventsData[eIdx].sponsors[sIdx].logo = data.url;
@@ -361,7 +421,11 @@
       formData.append('file', file);
       
       try {
-        const response = await fetch(UPLOAD_URL, { method: 'POST', body: formData });
+        const response = await fetch(UPLOAD_URL, { 
+          method: 'POST', 
+          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') },
+          body: formData 
+        });
         const data = await response.json();
         
         if (data.url) {
@@ -382,7 +446,11 @@
       formData.append('file', file);
       
       try {
-        const response = await fetch(UPLOAD_URL, { method: 'POST', body: formData });
+        const response = await fetch(UPLOAD_URL, { 
+          method: 'POST', 
+          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') },
+          body: formData 
+        });
         const data = await response.json();
         
         if (data.url) {
@@ -400,9 +468,19 @@
       try {
         const response = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('adminToken')
+          },
           body: JSON.stringify(eventsData)
         });
+        
+        if (response.status === 401) {
+          alert('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+          logout();
+          return;
+        }
+        
         const result = await response.json();
         if (result.success) {
           alert('¡Cambios guardados con éxito en la base de datos!');
@@ -412,8 +490,8 @@
       }
     }
 
-    // Arrancar la app
-    loadData();
+    // Arrancar la app (Verificando Autenticación)
+    checkAuth();
   </script>
 </body>
 </html>

@@ -71,21 +71,44 @@ if (!fs.existsSync(dataPath)) {
   fs.writeFileSync(dataPath, JSON.stringify(initialData, null, 2));
 }
 
-// ENDPOINT: Obtener las fiestas
+// Autenticación básica
+const ADMIN_USER = 'FabrizioPerez';
+const ADMIN_PASS = '46829111'; // Contraseña sencilla requerida por el usuario
+const AUTH_TOKEN = 'token-admin-wildfest-2026';
+
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    res.json({ success: true, token: AUTH_TOKEN });
+  } else {
+    res.status(401).json({ success: false, message: 'Usuario o contraseña incorrectos' });
+  }
+});
+
+const requireAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader === `Bearer ${AUTH_TOKEN}`) {
+    next();
+  } else {
+    res.status(401).json({ error: 'No autorizado. Inicie sesión.' });
+  }
+};
+
+// ENDPOINT: Obtener las fiestas (PÚBLICO)
 app.get('/api/fiestas', (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const rawData = fs.readFileSync(dataPath);
   res.json(JSON.parse(rawData));
 });
 
-// ENDPOINT: Guardar las fiestas
-app.post('/api/fiestas', (req, res) => {
+// ENDPOINT: Guardar las fiestas (PROTEGIDO)
+app.post('/api/fiestas', requireAuth, (req, res) => {
   fs.writeFileSync(dataPath, JSON.stringify(req.body, null, 2));
   res.json({ success: true, message: "Datos actualizados correctamente" });
 });
 
-// ENDPOINT: Subir Imagen
-app.post('/api/upload', upload.single('file'), (req, res) => {
+// ENDPOINT: Subir Imagen (PROTEGIDO)
+app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No se subió ningún archivo' });
   }

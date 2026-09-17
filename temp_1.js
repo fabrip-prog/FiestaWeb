@@ -1,83 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Productora - Eventos</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .party-card {
-      transition: flex 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
-    }
-    .party-card:hover {
-      flex: 2 !important; /* Expansión fuerte al hover en desktop */
-    }
-    .bg-zoom {
-      transition: transform 0.8s ease-out;
-    }
-    .party-card:hover .bg-zoom {
-      transform: scale(1.05);
-    }
-    .scrollbar-hide::-webkit-scrollbar {
-      display: none;
-    }
-    .scrollbar-hide {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-  </style>
-</head>
-<body class="bg-black text-white font-sans overflow-x-hidden">
 
-  <!-- Botón Oculto/Discreto al Panel de Administración -->
-  <a href="admin.html" class="fixed bottom-4 right-4 z-50 opacity-10 hover:opacity-100 transition-opacity text-white flex items-center justify-center p-2 rounded-full cursor-pointer">
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-  </a>
-
-  <!-- HOME SCREEN: SELECTOR CON DESTACADO -->
-  <section id="event-selector" class="w-full min-h-[100dvh] relative bg-black flex flex-col">
-    <!-- Se llenará dinámicamente desde los archivos JS separados -->
-  </section>
-
-  <!-- SECCIÓN DE DETALLE -->
-  <section id="event-details" class="hidden py-16 px-6 bg-black min-h-screen">
-    <div class="max-w-6xl mx-auto">
-      <button onclick="backToHome()" class="mb-8 flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-colors">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-        Volver al Inicio
-      </button>
-
-      <div class="text-center mb-16">
-        <div id="detail-title-container" class="mb-4 drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]"></div>
-        <p id="detail-date" class="text-xl md:text-2xl text-gray-200 mb-2"></p>
-        <p id="detail-theme" class="text-md md:text-lg text-gray-500 tracking-[0.2em] uppercase"></p>
-      </div>
-
-      <!-- CONTENEDOR PARA PREVENTAS, SORTEOS Y SPONSORS -->
-      <div id="extra-details" class="w-full mb-16 space-y-16"></div>
-
-      <!-- RED DE RRPP -->
-      <h3 id="rrpp-section" class="text-2xl md:text-3xl font-black uppercase tracking-wide mb-8 text-center border-b border-white/10 pb-4">
-        Vendedores Oficiales
-      </h3>
-      <div id="rrpp-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- RRPP dinámicos aquí -->
-      </div>
-    </div>
-  </section>
-
-  <!-- 1. Inicializamos el array vacío para las fiestas -->
-  <script>
-    window.fiestas = [];
-  </script>
-
-  <!-- 2. Importamos los archivos separados (¡Aquí puedes editarlos independientemente!) -->
-  <script src="fiestas/wild-fest.js"></script>
-  <script src="fiestas/geminis.js"></script>
-  <script src="fiestas/70-30.js"></script>
-
-  <!-- Lógica Principal de la Interfaz -->
-  <script>
     async function initApp() {
       let events = [];
       try {
@@ -121,7 +42,7 @@
         : `<h2 class="text-4xl md:text-5xl lg:text-7xl font-black uppercase italic drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]" style="color: ${evt.color}">${evt.name}</h2>`;
 
       const hero = document.createElement('div');
-      hero.className = 'w-full min-h-[100dvh] relative flex flex-col justify-center items-center text-center p-6 pb-40';
+      hero.className = 'w-full h-full relative flex flex-col justify-center items-center text-center p-6';
       
       hero.innerHTML = `
         <div class="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105" style="background-image: url('${evt.image}');"></div>
@@ -135,28 +56,37 @@
           <p class="text-lg md:text-xl font-light mt-4 text-white/90 drop-shadow-md">
             ${dateString}
           </p>
-          
-          <button onclick="showEventDetails(${selectedIndex})" class="mt-8 px-8 py-3 rounded-full font-black text-black transition-all hover:scale-105 relative z-50 cursor-pointer pointer-events-auto shadow-2xl" style="background-color: ${evt.color}; box-shadow: 0 0 20px ${evt.color}80">
-            VER MÁS E INGRESAR
-          </button>
         </div>
       `;
 
       selectorContainer.appendChild(hero);
+
+      // Crear el botón programáticamente para garantizar que el evento clic se adhiera
+      const btnContainer = hero.querySelector('.z-20');
+      const btn = document.createElement('button');
+      btn.className = "mt-8 px-8 py-3 rounded-full font-black text-black transition-all hover:scale-105 relative z-50 cursor-pointer pointer-events-auto";
+      btn.style.backgroundColor = evt.color;
+      btn.style.boxShadow = `0 0 20px ${evt.color}80`;
+      btn.innerText = "VER MÁS E INGRESAR";
+      btn.onclick = function() {
+        console.log("Botón clickeado para el índice:", selectedIndex);
+        showEventDetails(selectedIndex);
+      };
+      btnContainer.appendChild(btn);
 
       // PEQUEÑO MENÚ (Otras fiestas)
       const otherEvents = events.map((e, i) => ({...e, originalIndex: i})).filter(e => e.originalIndex !== selectedIndex);
       
       if (otherEvents.length > 0) {
         const menu = document.createElement('div');
-        menu.className = 'absolute bottom-8 left-0 w-full px-4 md:px-12 z-30 flex flex-col items-start pointer-events-none';
+        menu.className = 'absolute bottom-8 left-0 w-full px-4 md:px-12 z-30 flex flex-col items-start';
         
-        let menuHtml = `<p class="text-white text-xs font-bold uppercase tracking-widest mb-3 opacity-80 pointer-events-auto drop-shadow-md">Explorar más fiestas</p>
-          <div class="flex gap-4 overflow-x-auto w-full pb-4 scrollbar-hide md:scrollbar-default snap-x pointer-events-auto">`;
+        let menuHtml = `<p class="text-white text-xs font-bold uppercase tracking-widest mb-3 opacity-80">Explorar más fiestas</p>
+          <div class="flex gap-4 overflow-x-auto w-full pb-4 scrollbar-hide snap-x">`;
           
         otherEvents.forEach(other => {
           menuHtml += `
-            <div onclick="renderHomeScreen(${other.originalIndex})" class="min-w-[140px] w-[140px] h-20 md:w-48 md:h-24 rounded-xl overflow-hidden relative cursor-pointer group snap-start border-2 border-transparent hover:border-white/50 transition-colors shadow-lg pointer-events-auto" style="border-color: ${other.color}40">
+            <div onclick="renderHomeScreen(${other.originalIndex})" class="min-w-[140px] w-[140px] h-20 md:w-48 md:h-24 rounded-xl overflow-hidden relative cursor-pointer group snap-start border-2 border-transparent hover:border-white/50 transition-colors shadow-lg" style="border-color: ${other.color}40">
               <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500" style="background-image: url('${other.image}');"></div>
               <div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-colors"></div>
               <div class="absolute inset-0 p-2 flex flex-col justify-end">
@@ -174,7 +104,6 @@
     }
 
     function showEventDetails(index) {
-      alert("Cargando la fiesta...");
       try {
         const events = window.currentEvents;
         const evt = events[index];
@@ -339,6 +268,4 @@
 
     // Iniciar aplicación
     initApp();
-  </script>
-</body>
-</html>
+  
