@@ -69,7 +69,6 @@ if (!fs.existsSync(dataPath)) {
       }
     ];
     fs.writeFileSync(dataPath, JSON.stringify(initialData, null, 2));
-  }
 }
 
 // Autenticación básica
