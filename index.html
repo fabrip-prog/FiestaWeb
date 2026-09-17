@@ -82,7 +82,7 @@
       let events = [];
       try {
         // Intenta obtener los datos del panel de administrador
-        const res = await fetch('http://localhost:3001/api/fiestas', { cache: 'no-store' });
+        const res = await fetch('/api/fiestas', { cache: 'no-store' });
         if (!res.ok) throw new Error('Respuesta no OK del servidor');
         events = await res.json();
       } catch (e) {

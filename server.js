@@ -12,14 +12,19 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname))); // Para servir imagenes estáticas
 
+const IS_VERCEL = process.env.VERCEL || process.env.VERCEL_ENV;
+const IMAGES_DIR = IS_VERCEL ? path.join('/tmp', 'imagenes') : path.join(__dirname, 'imagenes');
+const dataPath = IS_VERCEL ? path.join('/tmp', 'database.json') : path.join(__dirname, 'database.json');
+
+app.use('/imagenes', express.static(IMAGES_DIR));
+
 // Configuración para guardar imágenes subidas
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const dir = path.join(__dirname, 'imagenes');
-    if (!fs.existsSync(dir)){
-        fs.mkdirSync(dir);
+    if (!fs.existsSync(IMAGES_DIR)){
+        fs.mkdirSync(IMAGES_DIR, { recursive: true });
     }
-    cb(null, dir);
+    cb(null, IMAGES_DIR);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -28,47 +33,51 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Archivo de base de datos JSON local
-const dataPath = path.join(__dirname, 'database.json');
-
-// Si no existe la base de datos, la inicializamos con los datos por defecto
+// Si no existe la base de datos (por ejemplo, en /tmp de Vercel)
 if (!fs.existsSync(dataPath)) {
-  const initialData = [
-    {
-      slug: "wild-fest",
-      name: "Wild Fest",
-      logo: "imagenes/logo-wild.jpg",
-      logoWidth: "250px",
-      theme: "Jungle & Neon",
-      color: "#39FF14",
-      date: "2026-10-31T23:30:00-03:00",
-      image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1920&auto=format&fit=crop",
-      prNetwork: []
-    },
-    {
-      slug: "geminis",
-      name: "Geminis",
-      logo: "imagenes/logo-geminis.jpg",
-      logoWidth: "250px",
-      theme: "Esotérico & Deep Dark",
-      color: "#FF00FF",
-      date: "2026-11-15T23:00:00-03:00",
-      image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=1920&auto=format&fit=crop",
-      prNetwork: []
-    },
-    {
-      slug: "70-30",
-      name: "70/30",
-      logo: "imagenes/logo_7030.jpg",
-      logoWidth: "250px",
-      theme: "Retro & Disco",
-      color: "#00FFFF",
-      date: "2026-12-05T23:30:00-03:00",
-      image: "https://images.unsplash.com/photo-1502136969935-8d8eef54d77b?q=80&w=1920&auto=format&fit=crop",
-      prNetwork: []
-    }
-  ];
-  fs.writeFileSync(dataPath, JSON.stringify(initialData, null, 2));
+  const localDb = path.join(__dirname, 'database.json');
+  if (fs.existsSync(localDb)) {
+    // Si existe en el repo, copiarlo al /tmp
+    fs.copyFileSync(localDb, dataPath);
+  } else {
+    // Inicializar con datos por defecto
+    const initialData = [
+      {
+        slug: "wild-fest",
+        name: "Wild Fest",
+        logo: "imagenes/logo-wild.jpg",
+        logoWidth: "250px",
+        theme: "Jungle & Neon",
+        color: "#39FF14",
+        date: "2026-10-31T23:30:00-03:00",
+        image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1920&auto=format&fit=crop",
+        prNetwork: []
+      },
+      {
+        slug: "geminis",
+        name: "Geminis",
+        logo: "imagenes/logo-geminis.jpg",
+        logoWidth: "250px",
+        theme: "Esotérico & Deep Dark",
+        color: "#FF00FF",
+        date: "2026-11-15T23:00:00-03:00",
+        image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=1920&auto=format&fit=crop",
+        prNetwork: []
+      },
+      {
+        slug: "70-30",
+        name: "70/30",
+        logo: "imagenes/logo_7030.jpg",
+        logoWidth: "250px",
+        theme: "Retro & Disco",
+        color: "#00FFFF",
+        date: "2026-12-05T23:30:00-03:00",
+        image: "https://images.unsplash.com/photo-1502136969935-8d8eef54d77b?q=80&w=1920&auto=format&fit=crop",
+        prNetwork: []
+      }
+    ];
+    fs.writeFileSync(dataPath, JSON.stringify(initialData, null, 2));
+  }
 }
 
 // Autenticación básica
@@ -116,6 +125,10 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   res.json({ url: `imagenes/${req.file.filename}` });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Panel de Administrador corriendo en http://localhost:${PORT}`);
-});
+if (!IS_VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Panel de Administrador corriendo en http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
