@@ -5,26 +5,24 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Configuración básica
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname))); // Para servir imagenes estáticas
 
-const IS_VERCEL = process.env.VERCEL || process.env.VERCEL_ENV;
-const IMAGES_DIR = IS_VERCEL ? path.join('/tmp', 'imagenes') : path.join(__dirname, 'imagenes');
-const dataPath = IS_VERCEL ? path.join('/tmp', 'database.json') : path.join(__dirname, 'database.json');
-
-app.use('/imagenes', express.static(IMAGES_DIR));
+// Archivo de base de datos JSON local
+const dataPath = path.join(__dirname, 'database.json');
 
 // Configuración para guardar imágenes subidas
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    if (!fs.existsSync(IMAGES_DIR)){
-        fs.mkdirSync(IMAGES_DIR, { recursive: true });
+    const dir = path.join(__dirname, 'imagenes');
+    if (!fs.existsSync(dir)){
+        fs.mkdirSync(dir);
     }
-    cb(null, IMAGES_DIR);
+    cb(null, dir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -33,15 +31,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Si no existe la base de datos (por ejemplo, en /tmp de Vercel)
+// Si no existe la base de datos, la inicializamos con los datos por defecto
 if (!fs.existsSync(dataPath)) {
-  const localDb = path.join(__dirname, 'database.json');
-  if (fs.existsSync(localDb)) {
-    // Si existe en el repo, copiarlo al /tmp
-    fs.copyFileSync(localDb, dataPath);
-  } else {
-    // Inicializar con datos por defecto
-    const initialData = [
+  const initialData = [
       {
         slug: "wild-fest",
         name: "Wild Fest",
@@ -125,10 +117,6 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   res.json({ url: `imagenes/${req.file.filename}` });
 });
 
-if (!IS_VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`🚀 Panel de Administrador corriendo en http://localhost:${PORT}`);
-  });
-}
-
-module.exports = app;
+app.listen(PORT, () => {
+  console.log(`🚀 Panel de Administrador corriendo en http://localhost:${PORT}`);
+});
