@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel de Administrador - Productora</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
+  <div class="max-w-5xl mx-auto py-10 px-6">
+    
+    <!-- Botón para volver al Index -->
+    <div class="mb-4">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-500 hover:text-gray-900 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Volver al Sitio Web
+      </a>
+    </div>
+
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-4xl font-black text-gray-900">Panel de Control</h1>
+      <button onclick="saveAll()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+        💾 Guardar Cambios
+      </button>
+    </div>
+
+    <!-- Contenedor donde renderizaremos los formularios de cada fiesta -->
+    <div id="admin-container" class="space-y-12">
+      <p class="text-center text-gray-500">Cargando datos del servidor...</p>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3001/api/fiestas';
+    const UPLOAD_URL = 'http://localhost:3001/api/upload';
+    
+    let eventsData = [];
+
+    // Cargar datos al iniciar
+    async function loadData() {
+      try {
+        const response = await fetch(API_URL, { cache: 'no-store' });
+        if (!response.ok) throw new Error('Network error');
+        eventsData = await response.json();
+        renderAdminPanel();
+      } catch (error) {
+        document.getElementById('admin-container').innerHTML = 
+          `<div class="bg-red-100 text-red-700 p-6 rounded-lg font-bold">Error: No se pudo conectar con el servidor local. Asegúrate de tener corriendo 'node server.js' en la terminal y de acceder mediante http://localhost:3001/admin.html.</div>`;
+      }
+    }
+
+    // Renderizar los formularios
+    function renderAdminPanel() {
+      const container = document.getElementById('admin-container');
+      container.innerHTML = '';
+
+      eventsData.forEach((evt, index) => {
+        const section = document.createElement('div');
+        section.className = "bg-white p-8 rounded-2xl shadow-md border-t-8";
+        section.style.borderColor = evt.color;
+
+        section.innerHTML = `
+          <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-4">
+              <h2 class="text-2xl font-bold uppercase" style="color: ${evt.color}">${evt.name}</h2>
+              <button onclick="setHighlighted(${index})" class="px-4 py-1 rounded-full text-xs font-bold transition-colors ${evt.isHighlighted ? 'bg-yellow-400 text-black shadow-[0_0_10px_rgba(250,204,21,0.8)]' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}">
+                ${evt.isHighlighted ? '⭐ FIESTA DESTACADA' : '☆ Destacar en Inicio'}
+              </button>
+            </div>
+            <input type="color" value="${evt.color}" onchange="updateEvent(${index}, 'color', this.value)" class="w-10 h-10 rounded cursor-pointer">
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label class="block text-sm font-bold mb-2">Nombre de la Fiesta</label>
+              <input type="text" value="${evt.name}" onchange="updateEvent(${index}, 'name', this.value)" class="w-full p-3 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-sm font-bold mb-2">Temática</label>
+              <input type="text" value="${evt.theme}" onchange="updateEvent(${index}, 'theme', this.value)" class="w-full p-3 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-sm font-bold mb-2">Fecha (Formato ISO)</label>
+              <input type="text" value="${evt.date}" onchange="updateEvent(${index}, 'date', this.value)" class="w-full p-3 border border-gray-300 rounded-lg text-sm font-mono text-gray-500">
+            </div>
+            <div>
+              <label class="block text-sm font-bold mb-2">Tamaño del Logo (Ej: 250px)</label>
+              <input type="text" value="${evt.logoWidth || '250px'}" onchange="updateEvent(${index}, 'logoWidth', this.value)" class="w-full p-3 border border-gray-300 rounded-lg">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold mb-2">Descripción e Información de la Fiesta</label>
+              <textarea onchange="updateEvent(${index}, 'description', this.value)" class="w-full p-3 border border-gray-300 rounded-lg h-24" placeholder="Escribe aquí los detalles del evento...">${evt.description || ''}</textarea>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-gray-50 p-6 rounded-lg">
+            <!-- Uploader Logo -->
+            <div>
+              <label class="block text-sm font-bold mb-2">Logo actual (Ruta)</label>
+              <input type="text" value="${evt.logo}" onchange="updateEvent(${index}, 'logo', this.value)" class="w-full p-3 border border-gray-300 rounded-lg mb-2 text-sm text-gray-500">
+              <label class="bg-gray-800 text-white px-4 py-2 rounded text-sm cursor-pointer hover:bg-gray-700 transition">
+                Subir Nuevo Logo
+                <input type="file" accept="image/*" class="hidden" onchange="uploadImage(event, ${index}, 'logo')">
+              </label>
+            </div>
+            
+            <!-- Uploader Fondo -->
+            <div>
+              <label class="block text-sm font-bold mb-2">Fondo actual (Ruta o URL)</label>
+              <input type="text" value="${evt.image}" onchange="updateEvent(${index}, 'image', this.value)" class="w-full p-3 border border-gray-300 rounded-lg mb-2 text-sm text-gray-500 text-ellipsis overflow-hidden">
+              <label class="bg-gray-800 text-white px-4 py-2 rounded text-sm cursor-pointer hover:bg-gray-700 transition">
+                Subir Nuevo Fondo
+                <input type="file" accept="image/*" class="hidden" onchange="uploadImage(event, ${index}, 'image')">
+              </label>
+            </div>
+          </div>
+
+          <hr class="my-6">
+          <h3 class="text-xl font-bold mb-4">Galería de Fotos</h3>
+          <div id="gallery-list-${index}" class="flex flex-wrap gap-4 mb-4"></div>
+          <label class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg font-bold hover:bg-indigo-200 cursor-pointer inline-block">
+            + Añadir Foto a la Galería
+            <input type="file" accept="image/*" class="hidden" onchange="uploadGalleryImage(event, ${index})">
+          </label>
+          
+          <hr class="my-6">
+          <h3 class="text-xl font-bold mb-4">Preventas (Tickets)</h3>
+          <div id="presales-list-${index}" class="space-y-4 mb-4"></div>
+          <button onclick="addPresale(${index})" class="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-bold hover:bg-blue-200">+ Agregar Preventa</button>
+
+          <hr class="my-6">
+          <h3 class="text-xl font-bold mb-4">Sorteos</h3>
+          <div id="raffles-list-${index}" class="space-y-4 mb-4"></div>
+          <button onclick="addRaffle(${index})" class="bg-purple-100 text-purple-700 px-4 py-2 rounded-lg font-bold hover:bg-purple-200">+ Agregar Sorteo</button>
+
+          <hr class="my-6">
+          <h3 class="text-xl font-bold mb-4">Sponsors</h3>
+          <div id="sponsors-list-${index}" class="space-y-4 mb-4"></div>
+          <button onclick="addSponsor(${index})" class="bg-yellow-100 text-yellow-700 px-4 py-2 rounded-lg font-bold hover:bg-yellow-200">+ Agregar Sponsor</button>
+
+          <hr class="my-6">
+          <h3 class="text-xl font-bold mb-4">Vendedores Oficiales (RRPP)</h3>
+          <div id="rrpp-list-${index}" class="space-y-4 mb-4"></div>
+          <button onclick="addPR(${index})" class="bg-green-100 text-green-700 px-4 py-2 rounded-lg font-bold hover:bg-green-200">+ Agregar Vendedor</button>
+        `;
+        container.appendChild(section);
+        
+        // Renderizar sub-listas
+        renderPresales(index);
+        renderRaffles(index);
+        renderSponsors(index);
+        renderGallery(index);
+        renderPRs(index);
+      });
+    }
+
+    function setHighlighted(index) {
+      eventsData.forEach((e, i) => e.isHighlighted = (i === index));
+      renderAdminPanel();
+    }
+
+    function renderGallery(eIdx) {
+      const container = document.getElementById(`gallery-list-${eIdx}`);
+      container.innerHTML = '';
+      const list = eventsData[eIdx].gallery || [];
+      list.forEach((url, imgIdx) => {
+        container.innerHTML += `
+          <div class="relative w-32 h-32 rounded-lg overflow-hidden border border-gray-300 group shadow-sm">
+            <img src="${url}" class="w-full h-full object-cover">
+            <button onclick="removeGalleryImage(${eIdx}, ${imgIdx})" class="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">X</button>
+          </div>
+        `;
+      });
+    }
+
+    function removeGalleryImage(eIdx, imgIdx) {
+      eventsData[eIdx].gallery.splice(imgIdx, 1);
+      renderGallery(eIdx);
+    }
+
+    async function uploadGalleryImage(e, eIdx) {
+      const file = e.target.files[0];
+      if(!file) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        const response = await fetch(UPLOAD_URL, { method: 'POST', body: formData });
+        const data = await response.json();
+        if (data.url) {
+          if (!eventsData[eIdx].gallery) eventsData[eIdx].gallery = [];
+          eventsData[eIdx].gallery.push(data.url);
+          renderGallery(eIdx);
+        }
+      } catch (err) { alert("Error al subir foto"); }
+    }
+
+    function renderPRs(eventIndex) {
+      const prListContainer = document.getElementById(`rrpp-list-${eventIndex}`);
+      prListContainer.innerHTML = '';
+      
+      const prs = eventsData[eventIndex].prNetwork || [];
+      prs.forEach((pr, prIndex) => {
+        prListContainer.innerHTML += `
+          <div class="flex flex-col gap-4 bg-gray-50 p-6 rounded-lg border border-gray-200 relative mb-4">
+            <button onclick="removePR(${eventIndex}, ${prIndex})" class="absolute top-4 right-4 bg-red-100 text-red-600 px-3 py-1 rounded font-bold hover:bg-red-200">X Eliminar</button>
+            
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-300">
+                <img src="${pr.image || 'https://via.placeholder.com/150'}" class="w-full h-full object-cover">
+              </div>
+              <label class="bg-gray-800 text-white px-4 py-2 rounded text-sm cursor-pointer hover:bg-gray-700 transition">
+                Subir Foto de Perfil
+                <input type="file" accept="image/*" class="hidden" onchange="uploadPRImage(event, ${eventIndex}, ${prIndex})">
+              </label>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Nombre</label>
+                <input type="text" value="${pr.name || ''}" onchange="updatePR(${eventIndex}, ${prIndex}, 'name', this.value)" class="w-full p-2 border rounded">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Zona (Ej: Palermo)</label>
+                <input type="text" value="${pr.zone || ''}" onchange="updatePR(${eventIndex}, ${prIndex}, 'zone', this.value)" class="w-full p-2 border rounded">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">WhatsApp (Ej: 549112345678)</label>
+                <input type="text" value="${pr.phone || ''}" onchange="updatePR(${eventIndex}, ${prIndex}, 'phone', this.value)" class="w-full p-2 border rounded">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Instagram (Link completo)</label>
+                <input type="text" value="${pr.instagram || ''}" onchange="updatePR(${eventIndex}, ${prIndex}, 'instagram', this.value)" class="w-full p-2 border rounded" placeholder="https://instagram.com/usuario">
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function renderPresales(eIdx) {
+      const container = document.getElementById(`presales-list-${eIdx}`);
+      container.innerHTML = '';
+      const list = eventsData[eIdx].presales || [];
+      list.forEach((item, idx) => {
+        container.innerHTML += `
+          <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 relative mb-4">
+            <button onclick="removePresale(${eIdx}, ${idx})" class="absolute top-4 right-4 bg-red-100 text-red-600 px-3 py-1 text-sm rounded font-bold hover:bg-red-200">X Eliminar</button>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+              <div><label class="text-xs font-bold text-gray-500">Fase / Nombre</label><input type="text" value="${item.name || ''}" onchange="updatePresale(${eIdx}, ${idx}, 'name', this.value)" class="w-full p-2 border rounded"></div>
+              <div><label class="text-xs font-bold text-gray-500">Inicio (Ej: 10/11 20:00)</label><input type="text" value="${item.startDate || ''}" onchange="updatePresale(${eIdx}, ${idx}, 'startDate', this.value)" class="w-full p-2 border rounded"></div>
+              <div><label class="text-xs font-bold text-gray-500">Fin (Ej: 15/11 20:00)</label><input type="text" value="${item.endDate || ''}" onchange="updatePresale(${eIdx}, ${idx}, 'endDate', this.value)" class="w-full p-2 border rounded"></div>
+              <div><label class="text-xs font-bold text-gray-500">Precio</label><input type="text" value="${item.price || ''}" onchange="updatePresale(${eIdx}, ${idx}, 'price', this.value)" class="w-full p-2 border rounded"></div>
+              <div class="md:col-span-4"><label class="text-xs font-bold text-gray-500">Link de Compra (URL)</label><input type="text" value="${item.link || ''}" onchange="updatePresale(${eIdx}, ${idx}, 'link', this.value)" class="w-full p-2 border rounded"></div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function renderRaffles(eIdx) {
+      const container = document.getElementById(`raffles-list-${eIdx}`);
+      container.innerHTML = '';
+      const list = eventsData[eIdx].raffles || [];
+      list.forEach((item, idx) => {
+        container.innerHTML += `
+          <div class="bg-purple-50 p-4 rounded-lg border border-purple-200 relative mb-4">
+            <button onclick="removeRaffle(${eIdx}, ${idx})" class="absolute top-4 right-4 bg-red-100 text-red-600 px-3 py-1 text-sm rounded font-bold hover:bg-red-200">X Eliminar</button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+              <div><label class="text-xs font-bold text-gray-500">Título del Sorteo</label><input type="text" value="${item.title || ''}" onchange="updateRaffle(${eIdx}, ${idx}, 'title', this.value)" class="w-full p-2 border rounded"></div>
+              <div><label class="text-xs font-bold text-gray-500">Link del Post (Instagram)</label><input type="text" value="${item.link || ''}" onchange="updateRaffle(${eIdx}, ${idx}, 'link', this.value)" class="w-full p-2 border rounded"></div>
+              <div class="md:col-span-2"><label class="text-xs font-bold text-gray-500">Descripción breve</label><input type="text" value="${item.description || ''}" onchange="updateRaffle(${eIdx}, ${idx}, 'description', this.value)" class="w-full p-2 border rounded"></div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function renderSponsors(eIdx) {
+      const container = document.getElementById(`sponsors-list-${eIdx}`);
+      container.innerHTML = '';
+      const list = eventsData[eIdx].sponsors || [];
+      list.forEach((item, idx) => {
+        container.innerHTML += `
+          <div class="flex items-center gap-4 bg-yellow-50 p-4 rounded-lg border border-yellow-200 relative mb-4">
+            <button onclick="removeSponsor(${eIdx}, ${idx})" class="absolute top-4 right-4 bg-red-100 text-red-600 px-3 py-1 text-sm rounded font-bold hover:bg-red-200">X Eliminar</button>
+            <div class="w-20 h-20 bg-white rounded border flex items-center justify-center p-2">
+              <img src="${item.logo || 'https://via.placeholder.com/150'}" class="max-w-full max-h-full object-contain">
+            </div>
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div><label class="text-xs font-bold text-gray-500">Nombre Sponsor</label><input type="text" value="${item.name || ''}" onchange="updateSponsor(${eIdx}, ${idx}, 'name', this.value)" class="w-full p-2 border rounded"></div>
+              <div>
+                <label class="text-xs font-bold text-gray-500 block mb-1">Subir Logo (Fondo transparente ideal)</label>
+                <input type="file" accept="image/*" class="w-full p-1 border rounded text-xs bg-white" onchange="uploadSponsorLogo(event, ${eIdx}, ${idx})">
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Funciones de actualización en memoria
+    function updateEvent(index, field, value) { eventsData[index][field] = value; }
+    
+    function updatePresale(eIdx, pIdx, field, value) { eventsData[eIdx].presales[pIdx][field] = value; }
+    function addPresale(index) {
+      if(!eventsData[index].presales) eventsData[index].presales = [];
+      eventsData[index].presales.push({ name: '', startDate: '', endDate: '', price: '', link: '' });
+      renderPresales(index);
+    }
+    function removePresale(eIdx, pIdx) { eventsData[eIdx].presales.splice(pIdx, 1); renderPresales(eIdx); }
+
+    function updateRaffle(eIdx, rIdx, field, value) { eventsData[eIdx].raffles[rIdx][field] = value; }
+    function addRaffle(index) {
+      if(!eventsData[index].raffles) eventsData[index].raffles = [];
+      eventsData[index].raffles.push({ title: '', description: '', link: '' });
+      renderRaffles(index);
+    }
+    function removeRaffle(eIdx, rIdx) { eventsData[eIdx].raffles.splice(rIdx, 1); renderRaffles(eIdx); }
+
+    function updateSponsor(eIdx, sIdx, field, value) { eventsData[eIdx].sponsors[sIdx][field] = value; }
+    function addSponsor(index) {
+      if(!eventsData[index].sponsors) eventsData[index].sponsors = [];
+      eventsData[index].sponsors.push({ name: '', logo: '' });
+      renderSponsors(index);
+    }
+    function removeSponsor(eIdx, sIdx) { eventsData[eIdx].sponsors.splice(sIdx, 1); renderSponsors(eIdx); }
+
+    async function uploadSponsorLogo(e, eIdx, sIdx) {
+      const file = e.target.files[0];
+      if(!file) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        const response = await fetch(UPLOAD_URL, { method: 'POST', body: formData });
+        const data = await response.json();
+        if (data.url) {
+          eventsData[eIdx].sponsors[sIdx].logo = data.url;
+          renderSponsors(eIdx);
+        }
+      } catch (err) { alert("Error al subir logo"); }
+    }
+
+    function updatePR(eIndex, pIndex, field, value) { eventsData[eIndex].prNetwork[pIndex][field] = value; }
+    function addPR(index) {
+
+    
+      if(!eventsData[index].prNetwork) eventsData[index].prNetwork = [];
+      eventsData[index].prNetwork.push({ name: '', zone: '', phone: '', instagram: '', image: 'https://via.placeholder.com/150' });
+      renderPRs(index);
+    }
+    function removePR(eIndex, pIndex) {
+      eventsData[eIndex].prNetwork.splice(pIndex, 1);
+      renderPRs(eIndex);
+    }
+
+    // Subida de foto de perfil del RRPP
+    async function uploadPRImage(e, eIndex, pIndex) {
+      const file = e.target.files[0];
+      if(!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      try {
+        const response = await fetch(UPLOAD_URL, { method: 'POST', body: formData });
+        const data = await response.json();
+        
+        if (data.url) {
+          eventsData[eIndex].prNetwork[pIndex].image = data.url;
+          renderPRs(eIndex); // refrescar solo esta lista
+        }
+      } catch (err) {
+        alert("Error al subir imagen");
+      }
+    }
+
+    // Subida de archivos
+    async function uploadImage(e, index, field) {
+      const file = e.target.files[0];
+      if(!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      try {
+        const response = await fetch(UPLOAD_URL, { method: 'POST', body: formData });
+        const data = await response.json();
+        
+        if (data.url) {
+          eventsData[index][field] = data.url;
+          alert("Imagen subida con éxito.");
+          renderAdminPanel(); // refrescar UI
+        }
+      } catch (err) {
+        alert("Error al subir imagen");
+      }
+    }
+
+    // Guardar en la base de datos (JSON)
+    async function saveAll() {
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(eventsData)
+        });
+        const result = await response.json();
+        if (result.success) {
+          alert('¡Cambios guardados con éxito en la base de datos!');
+        }
+      } catch (error) {
+        alert('Error al guardar los cambios.');
+      }
+    }
+
+    // Arrancar la app
+    loadData();
+  </script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+[
+  {
+    "slug": "wild-fest",
+    "name": "Wild Fest",
+    "logo": "imagenes/1789587878826-551365775.jpg",
+    "logoWidth": "250px",
+    "theme": "Jungle & Neon",
+    "color": "#39FF14",
+    "date": "2026-12-25T23:30:00-03:00",
+    "image": "imagenes/1789587891384-254615699.jpg",
+    "prNetwork": [
+      {
+        "name": "Fabrizio Perez",
+        "zone": "Gobernador Castro",
+        "phone": "3329506445",
+        "instagram": "https://www.instagram.com/fabrii_perez05?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw==",
+        "image": "imagenes/1789603634333-390496804.jpeg"
+      },
+      {
+        "name": "",
+        "zone": "",
+        "phone": "",
+        "instagram": "",
+        "image": "https://via.placeholder.com/150"
+      }
+    ],
+    "presales": [
+      {
+        "name": "Preventa 1",
+        "startDate": "10/11 00:00",
+        "endDate": "20/11 23:59",
+        "price": "$15.000",
+        "link": ""
+      },
+      {
+        "name": "",
+        "startDate": "",
+        "endDate": "",
+        "price": "",
+        "link": ""
+      }
+    ]
+  },
+  {
+    "slug": "geminis",
+    "name": "Geminis",
+    "logo": "imagenes/1789603428197-331762234.jpg",
+    "logoWidth": "250px",
+    "theme": "Esotérico & Deep Dark",
+    "color": "#FF00FF",
+    "date": "2026-11-15T23:00:00-03:00",
+    "image": "imagenes/1789603428197-331762234.jpg",
+    "prNetwork": [
+      {
+        "name": "Fabrizio Pérez",
+        "zone": "Gobernador Castro",
+        "phone": "3329506445",
+        "image": "imagenes/1789604007463-467791588.jpeg"
+      },
+      {
+        "name": "",
+        "zone": "",
+        "phone": "",
+        "image": "https://via.placeholder.com/150"
+      }
+    ]
+  },
+  {
+    "slug": "70-30",
+    "name": "70/30",
+    "logo": "imagenes/logo_7030.jpg",
+    "logoWidth": "250px",
+    "theme": "Retro & Disco",
+    "color": "#00FFFF",
+    "date": "2026-12-05T23:30:00-03:00",
+    "image": "imagenes/logo_7030.jpg",
+    "prNetwork": []
+  }
+]
