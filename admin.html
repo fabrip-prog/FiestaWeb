@@ -151,7 +151,7 @@
               <input type="text" value="${evt.logo}" onchange="updateEvent(${index}, 'logo', this.value)" class="w-full p-3 border border-gray-300 rounded-lg mb-2 text-sm text-gray-500">
               <label class="bg-gray-800 text-white px-4 py-2 rounded text-sm cursor-pointer hover:bg-gray-700 transition">
                 Subir Nuevo Logo
-                <input type="file" accept="image/*" class="hidden" onchange="uploadImage(event, ${index}, 'logo')">
+                <input type="file" accept="image/*" class="sr-only" onchange="uploadImage(event, ${index}, 'logo')">
               </label>
             </div>
             
@@ -161,7 +161,7 @@
               <input type="text" value="${evt.image}" onchange="updateEvent(${index}, 'image', this.value)" class="w-full p-3 border border-gray-300 rounded-lg mb-2 text-sm text-gray-500 text-ellipsis overflow-hidden">
               <label class="bg-gray-800 text-white px-4 py-2 rounded text-sm cursor-pointer hover:bg-gray-700 transition">
                 Subir Nuevo Fondo
-                <input type="file" accept="image/*" class="hidden" onchange="uploadImage(event, ${index}, 'image')">
+                <input type="file" accept="image/*" class="sr-only" onchange="uploadImage(event, ${index}, 'image')">
               </label>
             </div>
           </div>
@@ -171,7 +171,7 @@
           <div id="gallery-list-${index}" class="flex flex-wrap gap-4 mb-4"></div>
           <label class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg font-bold hover:bg-indigo-200 cursor-pointer inline-block">
             + Añadir Foto a la Galería
-            <input type="file" accept="image/*" class="hidden" onchange="uploadGalleryImage(event, ${index})">
+            <input type="file" accept="image/*" class="sr-only" onchange="uploadGalleryImage(event, ${index})">
           </label>
           
           <hr class="my-6">
@@ -276,7 +276,7 @@
               </div>
               <label class="bg-gray-800 text-white px-4 py-2 rounded text-sm cursor-pointer hover:bg-gray-700 transition">
                 Subir Foto de Perfil
-                <input type="file" accept="image/*" class="hidden" onchange="uploadPRImage(event, ${eventIndex}, ${prIndex})">
+                <input type="file" accept="image/*" class="sr-only" onchange="uploadPRImage(event, ${eventIndex}, ${prIndex})">
               </label>
             </div>
 
@@ -515,7 +515,7 @@
               </div>
               <label class="bg-gray-800 text-white px-4 py-2 rounded text-sm cursor-pointer hover:bg-gray-700 transition">
                 Subir Foto
-                <input type="file" accept="image/*" class="hidden" onchange="uploadDJImage(event, ${eIdx}, ${idx})">
+                <input type="file" accept="image/*" class="sr-only" onchange="uploadDJImage(event, ${eIdx}, ${idx})">
               </label>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
