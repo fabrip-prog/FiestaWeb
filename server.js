@@ -12,6 +12,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname))); // Para servir imagenes estáticas
 
+// explicitly serve HTML files for Vercel
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+app.get('/admin.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
 const isVercel = process.env.VERCEL;
 const dataPath = isVercel ? path.join('/tmp', 'database.json') : path.join(__dirname, 'database.json');
 const imgDir = isVercel ? path.join('/tmp', 'imagenes') : path.join(__dirname, 'imagenes');
