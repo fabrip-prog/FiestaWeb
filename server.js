@@ -20,75 +20,14 @@ app.get('/admin.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
-const isVercel = process.env.VERCEL;
-const dataPath = isVercel ? path.join('/tmp', 'database.json') : path.join(__dirname, 'database.json');
-const imgDir = isVercel ? path.join('/tmp', 'imagenes') : path.join(__dirname, 'imagenes');
+const { createClient } = require('@supabase/supabase-js');
 
-// Configuración para guardar imágenes subidas
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    if (!fs.existsSync(imgDir)){
-        fs.mkdirSync(imgDir, { recursive: true });
-    }
-    cb(null, imgDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage: storage });
+const supabaseUrl = 'https://durqxkxriuijahwbvemv.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1cnF4a3hyaXVpamFod2J2ZW12Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTczNzAyNywiZXhwIjoyMTA1MzEzMDI3fQ.QQ_z_5EHElUzLZpMtdmljCX4LWBF46uWz2YbKBYagOY';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Servir la carpeta de imágenes (en Vercel será /tmp/imagenes y fallback a local)
-if (isVercel) {
-  app.use('/imagenes', express.static(path.join('/tmp', 'imagenes')));
-}
-app.use('/imagenes', express.static(path.join(__dirname, 'imagenes')));
-
-// Si no existe la base de datos, la inicializamos
-if (!fs.existsSync(dataPath)) {
-  if (isVercel && fs.existsSync(path.join(__dirname, 'database.json'))) {
-    // En Vercel, copiamos la db original la primera vez (Cold Start)
-    fs.copyFileSync(path.join(__dirname, 'database.json'), dataPath);
-  } else {
-    const initialData = [
-        {
-          slug: "wild-fest",
-          name: "Wild Fest",
-          logo: "imagenes/logo-wild.jpg",
-          logoWidth: "250px",
-          theme: "Jungle & Neon",
-          color: "#39FF14",
-          date: "2026-10-31T23:30:00-03:00",
-          image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1920&auto=format&fit=crop",
-          prNetwork: []
-        },
-        {
-          slug: "geminis",
-          name: "Geminis",
-          logo: "imagenes/logo-geminis.jpg",
-          logoWidth: "250px",
-          theme: "Esotérico & Deep Dark",
-          color: "#FF00FF",
-          date: "2026-11-15T23:00:00-03:00",
-          image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=1920&auto=format&fit=crop",
-          prNetwork: []
-        },
-        {
-          slug: "70-30",
-          name: "70/30",
-          logo: "imagenes/logo_7030.jpg",
-          logoWidth: "250px",
-          theme: "Retro & Disco",
-          color: "#00FFFF",
-          date: "2026-12-05T23:30:00-03:00",
-          image: "https://images.unsplash.com/photo-1502136969935-8d8eef54d77b?q=80&w=1920&auto=format&fit=crop",
-          prNetwork: []
-        }
-      ];
-      fs.writeFileSync(dataPath, JSON.stringify(initialData, null, 2));
-  }
-}
+// Configuración para subir archivos a memoria y luego a Supabase
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Autenticación básica
 const ADMIN_USER = 'FabrizioPerez';
@@ -114,25 +53,61 @@ const requireAuth = (req, res, next) => {
 };
 
 // ENDPOINT: Obtener las fiestas (PÚBLICO)
-app.get('/api/fiestas', (req, res) => {
+app.get('/api/fiestas', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  const rawData = fs.readFileSync(dataPath);
-  res.json(JSON.parse(rawData));
+  try {
+    const { data, error } = await supabase.from('wildfest_data').select('events').eq('id', 1).single();
+    if (error || !data) {
+      // Fallback a database.json local si falla o está vacío
+      const localData = fs.readFileSync(path.join(__dirname, 'database.json'));
+      return res.json(JSON.parse(localData));
+    }
+    res.json(data.events);
+  } catch (err) {
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
 // ENDPOINT: Guardar las fiestas (PROTEGIDO)
-app.post('/api/fiestas', requireAuth, (req, res) => {
-  fs.writeFileSync(dataPath, JSON.stringify(req.body, null, 2));
-  res.json({ success: true, message: "Datos actualizados correctamente" });
+app.post('/api/fiestas', requireAuth, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('wildfest_data')
+      .upsert({ id: 1, events: req.body });
+      
+    if (error) throw error;
+    res.json({ success: true, message: "Datos actualizados correctamente en Supabase" });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error guardando en Supabase' });
+  }
 });
 
 // ENDPOINT: Subir Imagen (PROTEGIDO)
-app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
+app.post('/api/upload', requireAuth, upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No se subió ningún archivo' });
   }
-  // Devolvemos la ruta relativa para que el HTML la pueda usar
-  res.json({ url: `imagenes/${req.file.filename}` });
+  
+  try {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const fileName = uniqueSuffix + path.extname(req.file.originalname);
+    
+    const { data, error } = await supabase.storage
+      .from('imagenes')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false
+      });
+      
+    if (error) throw error;
+    
+    const { data: publicUrlData } = supabase.storage.from('imagenes').getPublicUrl(fileName);
+    
+    // Devolvemos la URL pública de Supabase
+    res.json({ url: publicUrlData.publicUrl });
+  } catch (err) {
+    res.status(500).json({ error: 'Error subiendo imagen a Supabase' });
+  }
 });
 
 if (!isVercel) {
