@@ -149,30 +149,30 @@
             <div>
               <label class="block text-sm font-bold mb-2">Logo actual (Ruta)</label>
               <input type="text" value="${evt.logo}" onchange="updateEvent(${index}, 'logo', this.value)" class="w-full p-3 border border-gray-300 rounded-lg mb-2 text-sm text-gray-500">
-              <label class="relative overflow-hidden bg-gray-800 text-white px-4 py-2 rounded text-sm cursor-pointer hover:bg-gray-700 transition inline-block">
-                Subir Nuevo Logo
-                <input type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="uploadImage(event, ${index}, 'logo')">
-              </label>
+              <div class="mt-2">
+                <label class="text-xs font-bold text-gray-500 block mb-1">Subir Nuevo Logo</label>
+                <input type="file" accept="image/*" class="w-full p-1 border rounded text-xs bg-white" onchange="uploadImage(event, ${index}, 'logo')">
+              </div>
             </div>
             
             <!-- Uploader Fondo -->
             <div>
               <label class="block text-sm font-bold mb-2">Fondo actual (Ruta o URL)</label>
               <input type="text" value="${evt.image}" onchange="updateEvent(${index}, 'image', this.value)" class="w-full p-3 border border-gray-300 rounded-lg mb-2 text-sm text-gray-500 text-ellipsis overflow-hidden">
-              <label class="relative overflow-hidden bg-gray-800 text-white px-4 py-2 rounded text-sm cursor-pointer hover:bg-gray-700 transition inline-block">
-                Subir Nuevo Fondo
-                <input type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="uploadImage(event, ${index}, 'image')">
-              </label>
+              <div class="mt-2">
+                <label class="text-xs font-bold text-gray-500 block mb-1">Subir Nuevo Fondo</label>
+                <input type="file" accept="image/*" class="w-full p-1 border rounded text-xs bg-white" onchange="uploadImage(event, ${index}, 'image')">
+              </div>
             </div>
           </div>
 
           <hr class="my-6">
           <h3 class="text-xl font-bold mb-4">Galería de Fotos</h3>
           <div id="gallery-list-${index}" class="flex flex-wrap gap-4 mb-4"></div>
-          <label class="relative overflow-hidden bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg font-bold hover:bg-indigo-200 cursor-pointer inline-block">
-            + Añadir Foto a la Galería
-            <input type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="uploadGalleryImage(event, ${index})">
-          </label>
+          <div class="mt-2">
+            <label class="text-xs font-bold text-gray-500 block mb-1">Añadir Foto a la Galería</label>
+            <input type="file" accept="image/*" class="w-full p-1 border rounded text-xs bg-white" onchange="uploadGalleryImage(event, ${index})">
+          </div>
           
           <hr class="my-6">
           <h3 class="text-xl font-bold mb-4">Preventas (Tickets)</h3>
@@ -274,10 +274,10 @@
               <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-300">
                 <img src="${pr.image || 'https://via.placeholder.com/150'}" class="w-full h-full object-cover">
               </div>
-              <label class="relative overflow-hidden bg-gray-800 text-white px-4 py-2 rounded text-sm cursor-pointer hover:bg-gray-700 transition inline-block">
-                Subir Foto de Perfil
-                <input type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="uploadPRImage(event, ${eventIndex}, ${prIndex})">
-              </label>
+              <div class="mt-2">
+                <label class="text-xs font-bold text-gray-500 block mb-1">Subir Foto de Perfil</label>
+                <input type="file" accept="image/*" class="w-full p-1 border rounded text-xs bg-white" onchange="uploadPRImage(event, ${eventIndex}, ${prIndex})">
+              </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
@@ -513,10 +513,10 @@
               <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-300">
                 <img src="${item.image || 'https://via.placeholder.com/150'}" class="w-full h-full object-cover">
               </div>
-              <label class="relative overflow-hidden bg-gray-800 text-white px-4 py-2 rounded text-sm cursor-pointer hover:bg-gray-700 transition inline-block">
-                Subir Foto
-                <input type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="uploadDJImage(event, ${eIdx}, ${idx})">
-              </label>
+              <div class="mt-2">
+                <label class="text-xs font-bold text-gray-500 block mb-1">Subir Foto de DJ</label>
+                <input type="file" accept="image/*" class="w-full p-1 border rounded text-xs bg-white" onchange="uploadDJImage(event, ${eIdx}, ${idx})">
+              </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
               <div><label class="text-xs font-bold text-gray-500">Nombre del DJ</label><input type="text" value="${item.name || ''}" onchange="updateDJ(${eIdx}, ${idx}, 'name', this.value)" class="w-full p-2 border rounded"></div>
