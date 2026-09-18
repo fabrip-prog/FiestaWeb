@@ -12,17 +12,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname))); // Para servir imagenes estáticas
 
-// Archivo de base de datos JSON local
-const dataPath = path.join(__dirname, 'database.json');
+const isVercel = process.env.VERCEL;
+const dataPath = isVercel ? path.join('/tmp', 'database.json') : path.join(__dirname, 'database.json');
+const imgDir = isVercel ? path.join('/tmp', 'imagenes') : path.join(__dirname, 'imagenes');
 
 // Configuración para guardar imágenes subidas
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const dir = path.join(__dirname, 'imagenes');
-    if (!fs.existsSync(dir)){
-        fs.mkdirSync(dir);
+    if (!fs.existsSync(imgDir)){
+        fs.mkdirSync(imgDir, { recursive: true });
     }
-    cb(null, dir);
+    cb(null, imgDir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -31,44 +31,52 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Si no existe la base de datos, la inicializamos con los datos por defecto
+// Servir la carpeta de imágenes (en Vercel será /tmp/imagenes, localmente __dirname/imagenes)
+app.use('/imagenes', express.static(imgDir));
+
+// Si no existe la base de datos, la inicializamos
 if (!fs.existsSync(dataPath)) {
-  const initialData = [
-      {
-        slug: "wild-fest",
-        name: "Wild Fest",
-        logo: "imagenes/logo-wild.jpg",
-        logoWidth: "250px",
-        theme: "Jungle & Neon",
-        color: "#39FF14",
-        date: "2026-10-31T23:30:00-03:00",
-        image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1920&auto=format&fit=crop",
-        prNetwork: []
-      },
-      {
-        slug: "geminis",
-        name: "Geminis",
-        logo: "imagenes/logo-geminis.jpg",
-        logoWidth: "250px",
-        theme: "Esotérico & Deep Dark",
-        color: "#FF00FF",
-        date: "2026-11-15T23:00:00-03:00",
-        image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=1920&auto=format&fit=crop",
-        prNetwork: []
-      },
-      {
-        slug: "70-30",
-        name: "70/30",
-        logo: "imagenes/logo_7030.jpg",
-        logoWidth: "250px",
-        theme: "Retro & Disco",
-        color: "#00FFFF",
-        date: "2026-12-05T23:30:00-03:00",
-        image: "https://images.unsplash.com/photo-1502136969935-8d8eef54d77b?q=80&w=1920&auto=format&fit=crop",
-        prNetwork: []
-      }
-    ];
-    fs.writeFileSync(dataPath, JSON.stringify(initialData, null, 2));
+  if (isVercel && fs.existsSync(path.join(__dirname, 'database.json'))) {
+    // En Vercel, copiamos la db original la primera vez (Cold Start)
+    fs.copyFileSync(path.join(__dirname, 'database.json'), dataPath);
+  } else {
+    const initialData = [
+        {
+          slug: "wild-fest",
+          name: "Wild Fest",
+          logo: "imagenes/logo-wild.jpg",
+          logoWidth: "250px",
+          theme: "Jungle & Neon",
+          color: "#39FF14",
+          date: "2026-10-31T23:30:00-03:00",
+          image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1920&auto=format&fit=crop",
+          prNetwork: []
+        },
+        {
+          slug: "geminis",
+          name: "Geminis",
+          logo: "imagenes/logo-geminis.jpg",
+          logoWidth: "250px",
+          theme: "Esotérico & Deep Dark",
+          color: "#FF00FF",
+          date: "2026-11-15T23:00:00-03:00",
+          image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=1920&auto=format&fit=crop",
+          prNetwork: []
+        },
+        {
+          slug: "70-30",
+          name: "70/30",
+          logo: "imagenes/logo_7030.jpg",
+          logoWidth: "250px",
+          theme: "Retro & Disco",
+          color: "#00FFFF",
+          date: "2026-12-05T23:30:00-03:00",
+          image: "https://images.unsplash.com/photo-1502136969935-8d8eef54d77b?q=80&w=1920&auto=format&fit=crop",
+          prNetwork: []
+        }
+      ];
+      fs.writeFileSync(dataPath, JSON.stringify(initialData, null, 2));
+  }
 }
 
 // Autenticación básica
@@ -116,6 +124,10 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   res.json({ url: `imagenes/${req.file.filename}` });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Panel de Administrador corriendo en http://localhost:${PORT}`);
-});
+if (!isVercel) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Panel de Administrador corriendo en http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
