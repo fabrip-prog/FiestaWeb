@@ -39,8 +39,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Servir la carpeta de imágenes (en Vercel será /tmp/imagenes, localmente __dirname/imagenes)
-app.use('/imagenes', express.static(imgDir));
+// Servir la carpeta de imágenes (en Vercel será /tmp/imagenes y fallback a local)
+if (isVercel) {
+  app.use('/imagenes', express.static(path.join('/tmp', 'imagenes')));
+}
+app.use('/imagenes', express.static(path.join(__dirname, 'imagenes')));
 
 // Si no existe la base de datos, la inicializamos
 if (!fs.existsSync(dataPath)) {
