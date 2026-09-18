@@ -6,6 +6,7 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const isVercel = process.env.VERCEL;
 
 // Configuración básica
 app.use(cors());
