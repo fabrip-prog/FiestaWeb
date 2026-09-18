@@ -174,8 +174,8 @@
     }
 
     function showEventDetails(index) {
-      alert("Cargando la fiesta...");
       try {
+        history.pushState({ view: 'details' }, '', '#details');
         const events = window.currentEvents;
         const evt = events[index];
         
@@ -329,6 +329,14 @@
     }
 
     function backToHome() {
+      if (window.location.hash === '#details') {
+        history.back();
+      } else {
+        showHomeUI();
+      }
+    }
+
+    function showHomeUI() {
       const selector = document.getElementById('event-selector');
       const details = document.getElementById('event-details');
       
@@ -336,6 +344,12 @@
       selector.style.display = 'flex';
       window.scrollTo(0, 0);
     }
+
+    window.addEventListener('popstate', (e) => {
+      if (window.location.hash !== '#details') {
+        showHomeUI();
+      }
+    });
 
     // Iniciar aplicación
     initApp();

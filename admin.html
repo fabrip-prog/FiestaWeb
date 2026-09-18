@@ -193,6 +193,15 @@
           <h3 class="text-xl font-bold mb-4">Vendedores Oficiales (RRPP)</h3>
           <div id="rrpp-list-${index}" class="space-y-4 mb-4"></div>
           <button onclick="addPR(${index})" class="bg-green-100 text-green-700 px-4 py-2 rounded-lg font-bold hover:bg-green-200">+ Agregar Vendedor</button>
+          <hr class="my-6">
+          <h3 class="text-xl font-bold mb-4">DJs (Lineup)</h3>
+          <div id="djs-list-${index}" class="space-y-4 mb-4"></div>
+          <button onclick="addDJ(${index})" class="bg-gray-800 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700">+ Agregar DJ</button>
+
+          <hr class="my-6">
+          <h3 class="text-xl font-bold mb-4">Álbumes de Ediciones Pasadas</h3>
+          <div id="past-albums-list-${index}" class="space-y-4 mb-4"></div>
+          <button onclick="addPastAlbum(${index})" class="bg-orange-100 text-orange-700 px-4 py-2 rounded-lg font-bold hover:bg-orange-200">+ Agregar Álbum</button>
         `;
         container.appendChild(section);
         
@@ -202,6 +211,8 @@
         renderSponsors(index);
         renderGallery(index);
         renderPRs(index);
+        renderDJs(index);
+        renderPastAlbums(index);
       });
     }
 
@@ -489,6 +500,83 @@
         alert('Error al guardar los cambios.');
       }
     }
+
+    function renderDJs(eIdx) {
+      const container = document.getElementById(`djs-list-${eIdx}`);
+      container.innerHTML = '';
+      const list = eventsData[eIdx].djs || [];
+      list.forEach((item, idx) => {
+        container.innerHTML += `
+          <div class="flex flex-col gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200 relative mb-4">
+            <button onclick="removeDJ(${eIdx}, ${idx})" class="absolute top-4 right-4 bg-red-100 text-red-600 px-3 py-1 text-sm rounded font-bold hover:bg-red-200">X Eliminar</button>
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-300">
+                <img src="${item.image || 'https://via.placeholder.com/150'}" class="w-full h-full object-cover">
+              </div>
+              <label class="bg-gray-800 text-white px-4 py-2 rounded text-sm cursor-pointer hover:bg-gray-700 transition">
+                Subir Foto
+                <input type="file" accept="image/*" class="hidden" onchange="uploadDJImage(event, ${eIdx}, ${idx})">
+              </label>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+              <div><label class="text-xs font-bold text-gray-500">Nombre del DJ</label><input type="text" value="${item.name || ''}" onchange="updateDJ(${eIdx}, ${idx}, 'name', this.value)" class="w-full p-2 border rounded"></div>
+              <div><label class="text-xs font-bold text-gray-500">Instagram/Soundcloud Link</label><input type="text" value="${item.link || ''}" onchange="updateDJ(${eIdx}, ${idx}, 'link', this.value)" class="w-full p-2 border rounded"></div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function updateDJ(eIdx, idx, field, value) { eventsData[eIdx].djs[idx][field] = value; }
+    function addDJ(index) {
+      if(!eventsData[index].djs) eventsData[index].djs = [];
+      eventsData[index].djs.push({ name: '', link: '', image: 'https://via.placeholder.com/150' });
+      renderDJs(index);
+    }
+    function removeDJ(eIdx, idx) { eventsData[eIdx].djs.splice(idx, 1); renderDJs(eIdx); }
+    async function uploadDJImage(e, eIdx, idx) {
+      const file = e.target.files[0];
+      if(!file) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        const response = await fetch(UPLOAD_URL, { 
+          method: 'POST', 
+          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') },
+          body: formData 
+        });
+        const data = await response.json();
+        if (data.url) {
+          eventsData[eIdx].djs[idx].image = data.url;
+          renderDJs(eIdx);
+        }
+      } catch (err) { alert("Error al subir imagen"); }
+    }
+
+
+    function renderPastAlbums(eIdx) {
+      const container = document.getElementById(`past-albums-list-${eIdx}`);
+      container.innerHTML = '';
+      const list = eventsData[eIdx].pastAlbums || [];
+      list.forEach((item, idx) => {
+        container.innerHTML += `
+          <div class="bg-orange-50 p-4 rounded-lg border border-orange-200 relative mb-4">
+            <button onclick="removePastAlbum(${eIdx}, ${idx})" class="absolute top-4 right-4 bg-red-100 text-red-600 px-3 py-1 text-sm rounded font-bold hover:bg-red-200">X Eliminar</button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+              <div><label class="text-xs font-bold text-gray-500">Título del Álbum (Ej: Edición Verano)</label><input type="text" value="${item.title || ''}" onchange="updatePastAlbum(${eIdx}, ${idx}, 'title', this.value)" class="w-full p-2 border rounded"></div>
+              <div><label class="text-xs font-bold text-gray-500">Link del Álbum (Google Drive/Flickr)</label><input type="text" value="${item.link || ''}" onchange="updatePastAlbum(${eIdx}, ${idx}, 'link', this.value)" class="w-full p-2 border rounded"></div>
+            </div>
+          </div>
+        `;
+      });
+    }
+    function updatePastAlbum(eIdx, idx, field, value) { eventsData[eIdx].pastAlbums[idx][field] = value; }
+    function addPastAlbum(index) {
+      if(!eventsData[index].pastAlbums) eventsData[index].pastAlbums = [];
+      eventsData[index].pastAlbums.push({ title: '', link: '' });
+      renderPastAlbums(index);
+    }
+    function removePastAlbum(eIdx, idx) { eventsData[eIdx].pastAlbums.splice(idx, 1); renderPastAlbums(eIdx); }
 
     // Arrancar la app (Verificando Autenticación)
     checkAuth();
