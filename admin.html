@@ -518,9 +518,10 @@
                 <input type="file" accept="image/*" class="w-full p-1 border rounded text-xs bg-white" onchange="uploadDJImage(event, ${eIdx}, ${idx})">
               </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
               <div><label class="text-xs font-bold text-gray-500">Nombre del DJ</label><input type="text" value="${item.name || ''}" onchange="updateDJ(${eIdx}, ${idx}, 'name', this.value)" class="w-full p-2 border rounded"></div>
               <div><label class="text-xs font-bold text-gray-500">Instagram/Soundcloud Link</label><input type="text" value="${item.link || ''}" onchange="updateDJ(${eIdx}, ${idx}, 'link', this.value)" class="w-full p-2 border rounded"></div>
+              <div><label class="text-xs font-bold text-gray-500">WhatsApp</label><input type="text" placeholder="Ej: 5491123456789" value="${item.whatsapp || ''}" onchange="updateDJ(${eIdx}, ${idx}, 'whatsapp', this.value)" class="w-full p-2 border rounded"></div>
             </div>
           </div>
         `;
@@ -530,7 +531,7 @@
     function updateDJ(eIdx, idx, field, value) { eventsData[eIdx].djs[idx][field] = value; }
     function addDJ(index) {
       if(!eventsData[index].djs) eventsData[index].djs = [];
-      eventsData[index].djs.push({ name: '', link: '', image: 'https://via.placeholder.com/150' });
+      eventsData[index].djs.push({ name: '', link: '', whatsapp: '', image: 'https://via.placeholder.com/150' });
       renderDJs(index);
     }
     function removeDJ(eIdx, idx) { eventsData[eIdx].djs.splice(idx, 1); renderDJs(eIdx); }
